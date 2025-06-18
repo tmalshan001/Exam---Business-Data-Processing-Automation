@@ -1,0 +1,63 @@
+from openpyxl import load_workbook
+from datetime import datetime
+
+def load_sheet(filepath: str, sheet_name: str):
+    wb = load_workbook(filepath)
+    return wb[sheet_name]
+
+def get_column_indices():
+    return {
+        "adrese": 3,
+        "pilseta": 4,
+        "klients": 5,
+        "prioritate": 7,
+        "produkts": 8,
+        "datums": 9,
+        "cena": 10,
+        "skaits": 11,
+        "kopa": 13
+    }
+
+def count_addresses_with_condition(rows, adrese_prefix, max_skaits):
+    count = 0
+    for r in rows:
+        adrese, skaits = r["adrese"], r["skaits"]
+        if isinstance(adrese, str) and adrese.startswith(adrese_prefix) and isinstance(skaits, int) and skaits < max_skaits:
+            count += 1
+    return count
+
+def count_high_priority_in_year(rows, year):
+    return sum(
+        1 for r in rows
+        if r["prioritate"] == "High" and isinstance(r["datums"], datetime) and r["datums"].year == year
+    )
+
+def count_specific_address_in_cities(rows, address, cities):
+    return sum(
+        1 for r in rows
+        if r["adrese"] == address and r["pilseta"] in cities
+    )
+
+def get_data(ws, col_indices, start_row=4):
+    data = []
+    for row in ws.iter_rows(min_row=start_row, values_only=True):
+        record = {key: row[idx] for key, idx in col_indices.items()}
+        data.append(record)
+    return data
+
+def main():
+    ws = load_sheet('sagatave_eksamenam .xlsx', 'Lapa_0')
+    indices = get_column_indices()
+    rows = get_data(ws, indices)
+
+    q1 = count_addresses_with_condition(rows, 'Ain', 40)
+    print("Q1 Answer:", q1)
+
+    q2 = count_high_priority_in_year(rows, 2015)
+    print("Q2 Answer:", q2)
+
+    q3 = count_specific_address_in_cities(rows, 'Adulienas iela', ['Valmiera', 'Saulkrasti'])
+    print("Q3 Answer:", q3)
+
+if __name__ == "__main__":
+    main()
